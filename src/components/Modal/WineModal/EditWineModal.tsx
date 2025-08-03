@@ -210,7 +210,7 @@ const EditWineModal = ({ wine, showEditModal, setShowEditModal }: EditWineModalP
   );
 
   const renderForm = () => (
-    <form onSubmit={handleSubmit(onSubmit)} encType='multipart/form-data' className='mx-2'>
+    <form onSubmit={handleSubmit(onSubmit)} encType='multipart/form-data'>
       {/* 와인 이름 */}
       <p className='custom-text-md-medium md:custom-text-lg-medium mb-[10px] md:mb-[12px] mt-[22px] md:mt-[24px]'>
         와인 이름

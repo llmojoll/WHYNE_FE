@@ -16,22 +16,24 @@ import EditWineModal from '../Modal/WineModal/EditWineModal';
 import type { MyWine, MyWinesResponse } from '@/types/MyWinesTypes';
 
 const PAGE_LIMIT = 10;
+
 interface WineListProps {
   setTotalCount: (count: number) => void;
 }
+
 /**
  * WineList 컴포넌트
  *
- * 무한 스크롤을 통해 사용자의 와인 목록을 페이징하여 불러옴
- * IntersectionObserver로 스크롤 끝에 도달 시 추가 페이지를 자동으로 로드
- *
+ * - 무한 스크롤로 사용자 와인 목록 로딩
+ * - fetch 시 스크롤 튐 방지 로직 포함
  */
 export function WineList({ setTotalCount }: WineListProps) {
   const observerRef = useRef<HTMLDivElement | null>(null);
+
   const [editWine, setEditWine] = useState<MyWine | null>(null);
   const [deleteWineId, setDeleteWineId] = useState<number | null>(null);
 
-  //useInfiniteQuery 훅으로 와인 데이터를 무한 스크롤 형태로 조회
+  // 무한 스크롤 쿼리
   const { data, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
     {
       queryKey: ['wines'],
@@ -41,13 +43,14 @@ export function WineList({ setTotalCount }: WineListProps) {
     },
   );
 
+  // 총 와인 수 반영
   useEffect(() => {
     if (data?.pages?.[0]?.totalCount != null) {
       setTotalCount(data.pages[0].totalCount);
     }
   }, [data, setTotalCount]);
 
-  // IntersectionObserver 훅 적용으로 스크롤 끝 감지
+  // 옵저버로 무한 스크롤 감지
   useInfiniteScroll({
     targetRef: observerRef,
     hasNextPage: !!hasNextPage,
@@ -57,11 +60,17 @@ export function WineList({ setTotalCount }: WineListProps) {
 
   if (isError) throw error;
 
-  // 와인 목록 평탄화
-  const wines: MyWine[] =
-    data?.pages?.flatMap((page) => page?.list ?? [])?.sort((a, b) => b.id - a.id) ?? [];
+  // 최신순 (ID 기준 내림차순)
+  const wines: MyWine[] = data?.pages?.flatMap((page) => page?.list ?? []) ?? [];
 
-  if (!data || data.pages[0].list.length === 0) {
+  //  빈 목록 처리
+  if (!data || !data.pages) {
+    return null; // 아직 로딩 중이면 아무것도 안 보여줌
+  }
+
+  const isEmpty = data.pages[0].list.length === 0;
+
+  if (!isFetchingNextPage && isEmpty) {
     return <MyPageEmpty type='wines' />;
   }
 
@@ -109,10 +118,12 @@ export function WineList({ setTotalCount }: WineListProps) {
           </div>
         </ImageCard>
       ))}
+
+      {/* 수정 모달 */}
       {editWine && (
         <EditWineModal
           wine={{
-            wineId: editWine.id, // MyWine → EditWineModal 타입 변환
+            wineId: editWine.id,
             name: editWine.name,
             price: editWine.price,
             region: editWine.region,
@@ -127,6 +138,7 @@ export function WineList({ setTotalCount }: WineListProps) {
         />
       )}
 
+      {/* 삭제 모달 */}
       {deleteWineId !== null && (
         <DeleteModal
           type='wine'
@@ -137,8 +149,9 @@ export function WineList({ setTotalCount }: WineListProps) {
           }}
         />
       )}
-      {/* 옵저버 감지 요소 */}
-      <div ref={observerRef} className='w-1 h-1' />
+
+      {/* IntersectionObserver 감지용 요소 */}
+      <div ref={observerRef} className='w-full h-4' />
     </div>
   );
 }

@@ -28,6 +28,23 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     errorMessageToDisplay: '',
   };
 
+  private handleConfirm = () => {
+    const { router } = this.props;
+
+    this.setState({ isOpen: false });
+
+    const handleRouteComplete = () => {
+      this.setState({ hasError: false, error: null, errorMessageToDisplay: '' });
+      router.events.off('routeChangeComplete', handleRouteComplete);
+      router.events.off('routeChangeError', handleRouteComplete);
+    };
+
+    router.events.on('routeChangeComplete', handleRouteComplete);
+    router.events.on('routeChangeError', handleRouteComplete);
+
+    router.replace('/'); // 문제의 router.replace 사용
+  };
+
   public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     let errorMessage = '알 수 없는 에러가 발생했습니다.';
 
@@ -89,17 +106,22 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   // 컴포넌트 렌더링 로직
   public render() {
     const { hasError, isOpen, errorMessageToDisplay } = this.state;
-    const { children, router } = this.props;
+    const { children } = this.props;
 
     if (hasError) {
       return (
         <ErrorModal
           open={isOpen}
-          onOpenChange={() => {}}
-          onConfirm={() => {
-            this.setState({ isOpen: false, hasError: false });
-            router.replace('/');
+          onOpenChange={() => {
+            if (!isOpen) {
+              this.setState({
+                isOpen: false,
+                hasError: false,
+                error: null,
+              });
+            }
           }}
+          onConfirm={this.handleConfirm}
         >
           <div className='text-center custom-text-lg-bold'>{errorMessageToDisplay}</div>
         </ErrorModal>

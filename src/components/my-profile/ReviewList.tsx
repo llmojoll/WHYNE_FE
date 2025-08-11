@@ -20,19 +20,21 @@ const PAGE_LIMIT = 10;
 interface ReviewListProps {
   setTotalCount: (count: number) => void;
 }
+
 /**
  * ReviewList 컴포넌트
  *
- * 무한 스크롤을 통해 사용자의 리뷰 목록을 페이징하여 불러옴
- * IntersectionObserver로 스크롤 끝에 도달 시 다음 페이지를 자동으로 로드
- *
+ * - 무한 스크롤로 사용자 리뷰를 페이지 단위로 로드
+ * - IntersectionObserver를 사용해 하단 감지
+ * - fetch 시 스크롤 튐 현상을 방지하기 위한 보정 로직 포함
  */
 export function ReviewList({ setTotalCount }: ReviewListProps) {
   const [editReview, setEditReview] = useState<MyReview | null>(null);
   const [deleteReviewId, setDeleteReviewId] = useState<number | null>(null);
-  const observerRef = useRef<HTMLDivElement | null>(null);
 
-  // useInfiniteQuery 훅으로 리뷰 데이터를 무한 스크롤 형태로 조회
+  const observerRef = useRef<HTMLDivElement | null>(null); // 옵저버 대상 요소
+
+  // 무한 스크롤 쿼리 세팅
   const { data, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
     {
       queryKey: ['reviews'],
@@ -41,14 +43,15 @@ export function ReviewList({ setTotalCount }: ReviewListProps) {
       getNextPageParam: (lastPage) => lastPage.nextCursor ?? null,
     },
   );
-  // xhx
+
+  // 전체 리뷰 수 설정
   useEffect(() => {
     if (data?.pages?.[0]?.totalCount != null) {
       setTotalCount(data.pages[0].totalCount);
     }
   }, [data, setTotalCount]);
 
-  // IntersectionObserver 훅 적용으로 스크롤 끝 감지
+  // IntersectionObserver 감지 로직 연결
   useInfiniteScroll({
     targetRef: observerRef,
     hasNextPage,
@@ -58,13 +61,17 @@ export function ReviewList({ setTotalCount }: ReviewListProps) {
 
   if (isError) throw error;
 
-  // 리뷰 목록 평탄화
-  const reviews: MyReview[] =
-    data?.pages
-      ?.flatMap((page) => page.list ?? [])
-      ?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) ?? [];
+  //  정렬: 최신순 (createdAt 기준 내림차순)
+  const reviews: MyReview[] = data?.pages?.flatMap((page) => page?.list ?? []) ?? [];
 
-  if (!data || data.pages[0].list.length === 0) {
+  //  빈 목록 처리
+  if (!data || !data.pages) {
+    return null; // 아직 로딩 중이면 아무것도 안 보여줌
+  }
+
+  const isEmpty = data.pages[0].list.length === 0;
+
+  if (!isFetchingNextPage && isEmpty) {
     return <MyPageEmpty type='reviews' />;
   }
 
@@ -75,7 +82,7 @@ export function ReviewList({ setTotalCount }: ReviewListProps) {
           key={review.id}
           rating={
             <Badge variant='star'>
-              <span className='flex items-center  gap-[2px] w-full h-full'>
+              <span className='flex items-center gap-[2px] w-full h-full'>
                 <StarIcon className='w-[14px] h-[13px] pb-[2px]' />
                 {review.rating.toFixed(1)}
               </span>
@@ -106,6 +113,8 @@ export function ReviewList({ setTotalCount }: ReviewListProps) {
           }
         />
       ))}
+
+      {/*  리뷰 수정 모달 */}
       {editReview && (
         <EditReviewModal
           wineName={editReview.wine.name}
@@ -117,6 +126,7 @@ export function ReviewList({ setTotalCount }: ReviewListProps) {
         />
       )}
 
+      {/*  리뷰 삭제 모달 */}
       {deleteReviewId !== null && (
         <DeleteModal
           type='review'
@@ -128,8 +138,8 @@ export function ReviewList({ setTotalCount }: ReviewListProps) {
         />
       )}
 
-      {/* 옵저버 감지 요소 */}
-      <div ref={observerRef} className='w-1 h-1' />
+      {/*  옵저버가 감지할 요소 */}
+      <div ref={observerRef} className='w-full h-4' />
     </div>
   );
 }

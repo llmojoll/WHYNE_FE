@@ -48,6 +48,8 @@ export function clearAuthCookies(res: NextApiResponse) {
     `${COOKIE_NAMES.REFRESH_TOKEN}=; Path=/; Max-Age=0; HttpOnly${secure}`,
   ];
   res.setHeader('Set-Cookie', cookies);
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Expires', '0');
 }
 
 export async function getCookie({ cookieHeader, name }: GetCookieParams) {

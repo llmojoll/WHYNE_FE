@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -24,7 +25,7 @@ interface FormValues {
  */
 export default function Profile() {
   const { user, setUser } = useUser();
-
+  const queryClient = useQueryClient();
   /** 선택된 이미지 파일 객체 */
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -122,6 +123,7 @@ export default function Profile() {
       // form 초기화 및 파일 제거
       reset({ nickname: updatedUser.nickname });
       setSelectedFile(null);
+      queryClient.invalidateQueries({ queryKey: ['nowLoginUser'] });
 
       toast.success('', {
         description: '프로필이 성공적으로 수정되었습니다.',

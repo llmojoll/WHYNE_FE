@@ -218,6 +218,7 @@ const EditWineModal = ({ wine, showEditModal, setShowEditModal }: EditWineModalP
       <Input
         id='wineName'
         type='text'
+        variant='name'
         placeholder='와인 이름 입력'
         {...register('wineName', {
           required: '와인 이름을 입력해주세요.',
@@ -235,6 +236,7 @@ const EditWineModal = ({ wine, showEditModal, setShowEditModal }: EditWineModalP
         className='[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none custom-text-md-regular md:custom-text-lg-regular'
         id='winePrice'
         type='text'
+        variant='name'
         placeholder='가격 입력'
         {...register('winePrice', {
           required: '가격을 입력해 주세요.',
@@ -256,6 +258,7 @@ const EditWineModal = ({ wine, showEditModal, setShowEditModal }: EditWineModalP
         className='custom-text-md-regular md:custom-text-lg-regular'
         id='wineOrigin'
         type='text'
+        variant='name'
         placeholder='원산지 입력'
         {...register('wineOrigin', {
           required: '원산지를 입력해주세요.',

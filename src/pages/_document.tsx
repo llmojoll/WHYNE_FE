@@ -35,6 +35,21 @@ export default function Document() {
           src='https://chatling.ai/js/embed.js'
           strategy='afterInteractive'
         />
+        <Script
+          id='lower-chatling-z'
+          strategy='afterInteractive'
+          dangerouslySetInnerHTML={{
+            __html: `
+      const lowerZ = () => {
+        document.querySelectorAll('iframe[src*="chatling"]').forEach(e => e.style.zIndex = '50');
+        document.querySelectorAll('div[style*="z-index: 2147483647"]').forEach(e => e.style.zIndex = '50');
+      };
+      lowerZ();
+      const obs = new MutationObserver(lowerZ);
+      obs.observe(document.body, { childList: true, subtree: true });
+    `,
+          }}
+        />
       </body>
     </Html>
   );
